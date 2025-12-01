@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fun English Quiz</title>
+    <style>
+        :root {
+            --bg-color: #FFF9C4;
+            --card-bg: #FFFFFF;
+            --primary-btn: #FF6D00;
+            --primary-shadow: #E65100;
+            --secondary-btn: #FF5252;
+            --secondary-shadow: #FFCDD2;
+            --mode-active-bg: #E0F7FA;
+            --mode-active-border: #00BCD4;
+            --text-dark: #424242;
+            --text-gray: #9E9E9E;
+            --correct: #66BB6A;
+            --wrong: #EF5350;
+            --block-bg: #FFAB40; 
+            --slot-border: #E0E0E0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(#FFECB3 20%, transparent 20%);
+            background-size: 20px 20px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen.active { display: flex; }
+
+        /* 卡片固定尺寸 */
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 90%; 
+            max-width: 450px;
+            min-height: 600px;
+            height: auto;
+            box-sizing: border-box;
+            position: relative;
+            border: 4px solid #FFF;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+        }
+
+        .header-section { text-align: center; margin-bottom: 10px; flex-shrink: 0; }
+        .main-title { color: var(--primary-btn); font-size: 2rem; font-weight: 800; margin: 0; }
+        .sub-title { color: #757575; font-size: 1.3rem; margin-top: 5px; font-weight: bold; }
+        
+        /* 內容區 */
+        .content-area {
+            flex-grow: 1;
+            padding: 5px 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .content-area.center-content { justify-content: center; }
+        .content-area.top-content { justify-content: flex-start; }
+
+        /* UI 元件 */
+        .section-label { font-size: 1.1rem; font-weight: bold; color: var(--text-dark); margin-bottom: 10px; display: block; align-self: flex-start; width:100%; text-align:left;}
+        .mode-container { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; }
+        .mode-btn {
+            flex: 1; background: #FAFAFA; border: 2px solid #EEE; border-radius: 15px;
+            padding: 12px 5px; cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: all 0.2s; color: var(--text-gray);
+        }
+        .mode-btn.active { background: var(--mode-active-bg); border-color: var(--mode-active-border); color: #00838F; }
+        .mode-btn svg { width: 28px; height: 28px; margin-bottom: 5px; fill: currentColor; }
+        .mode-btn span { font-weight: bold; font-size: 0.9rem; }
+
+        .scope-tabs { background: #F5F5F5; border-radius: 15px; padding: 5px; display: flex; margin-bottom: 15px; width: 100%; }
+        .tab-btn { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 12px; font-weight: bold; color: var(--text-gray); cursor: pointer; font-size: 0.95rem; }
+        .tab-btn.active { background: #FFFFFF; color: var(--primary-btn); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        .range-area { background: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 20px; padding: 20px 10px; margin-bottom: 20px; text-align: center; width: 100%; box-sizing: border-box; }
+        .range-inputs { display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .input-wrapper { display: flex; align-items: center; gap: 8px; }
+        .prefix-text { font-size: 1.2rem; font-weight: bold; color: #F57C00; }
+        .num-input { width: 70px; height: 45px; border: 2px solid #FFF; border-radius: 12px; text-align: center; font-size: 1.3rem; font-weight: bold; outline: none; box-sizing: border-box; background: #FFF; color: var(--text-dark); }
+        .num-input:focus { border-color: var(--primary-btn); }
+        .tilde-separator { font-size: 1.5rem; color: #F57C00; font-weight: bold; }
+
+        .btn-flex-center { display: flex; justify-content: center; align-items: center; gap: 8px; line-height: 1; }
+
+        .game-btn-group { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 20px; flex-shrink: 0; }
+        .btn-large, .btn-game { width: 100%; border: none; border-radius: 50px; padding: 15px; font-size: 1.3rem; font-weight: bold; cursor: pointer; transition: all 0.1s; }
+        .btn-large { background: linear-gradient(to bottom, #FF8F00, #EF6C00); color: white; box-shadow: 0 5px 0 var(--primary-shadow); }
+        .btn-large:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--primary-shadow); }
+
+        .btn-submit { background: var(--primary-btn); color: white; box-shadow: 0 4px 0 var(--primary-shadow); }
+        .btn-submit:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--primary-shadow); }
+        .btn-next { background: var(--correct); color: white; box-shadow: 0 4px 0 #388E3C; display: none;}
+        .btn-next:active { transform: translateY(2px); box-shadow: 0 2px 0 #388E3C; }
+        .btn-giveup { background: #FFF; color: var(--wrong); border: 2px solid #FFCDD2; box-shadow: 0 4px 0 #FFCDD2; }
+        .btn-giveup:active { transform: translateY(2px); box-shadow: 0 2px 0 #FFCDD2; background-color: #FFEBEE; }
+
+        .progress-pill { background: var(--mode-active-border); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; font-size: 0.9rem; flex-shrink: 0; }
+        
+        /* 修正：增加 flex-shrink: 0 防止標題被壓縮 */
+        .question-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; flex-shrink: 0; }
+        
+        .zh-display { font-size: 2.8rem; font-weight: 800; color: var(--text-dark); line-height: 1.2; margin: 0; }
+        .audio-btn { background: #00BCD4; border: none; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3); transition: transform 0.1s; flex-shrink: 0; }
+        .audio-btn:active { transform: scale(0.95); }
+        .audio-btn svg { width: 30px; height: 30px; fill: white; }
+
+        .game-input { width: 100%; box-sizing: border-box; padding: 12px; font-size: 1.5rem; text-align: center; border: 3px solid #EEE; border-radius: 20px; background: #FAFAFA; outline: none; transition: border 0.3s; }
+        .block-game-container { width: 100%; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+        
+        /* 答案槽樣式 */
+        .answer-slots-area { 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 15px 20px; 
+            width: fit-content; margin: 0 auto; border: 3px dashed var(--slot-border); border-radius: 25px; 
+            background: #FAFAFA; min-height: 80px; align-items: center; 
+            transition: all 0.3s ease; /* 平滑過渡 */
+        }
+        .letter-slot { width: 45px; height: 45px; border-radius: 10px; background: #FFF; border: 2px solid #DDD; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: bold; color: var(--text-dark); cursor: pointer; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .letter-slot.filled { border-color: var(--mode-active-border); background: #E0F7FA; color: #006064; transform: translateY(-2px); box-shadow: 0 4px 0 rgba(0,0,0,0.05); }
+        .spacer-slot { width: 20px; height: 45px; }
+
+        /* === 修正：緊湊模式 (Compact Mode) === */
+        /* 當單字太長時，自動應用這個 class 來縮小格子 */
+        .answer-slots-area.compact {
+            gap: 5px; /* 間距變小 */
+            padding: 10px;
+        }
+        .answer-slots-area.compact .letter-slot {
+            width: 34px;  /* 寬度變小 */
+            height: 34px; /* 高度變小 */
+            font-size: 1.2rem; /* 字體變小 */
+            border-radius: 6px;
+        }
+        .answer-slots-area.compact .spacer-slot {
+            width: 10px;
+            height: 34px;
+        }
+
+        .choice-blocks-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 5px; }
+        .choice-block { min-width: 48px; height: 48px; padding: 0 10px; border-radius: 12px; background: var(--block-bg); color: white; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 0 #E65100; transition: all 0.1s; user-select: none; }
+        .choice-block:active { transform: translateY(4px); box-shadow: 0 0 0 #E65100; }
+        .choice-block.used { opacity: 0; pointer-events: none; transform: scale(0.8); }
+
+        .feedback-area { height: 30px; display: flex; align-items: center; justify-content: center; margin-top: 10px; flex-shrink: 0; }
+        .feedback-text { font-weight: bold; font-size: 1.1rem; }
+        .feedback-text.good { color: var(--correct); }
+        .feedback-text.bad { color: var(--wrong); }
+
+        .answer-reveal-area { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.4s ease-out; padding: 20px 0; }
+        .reveal-en { font-size: 3.5rem; font-weight: 800; color: var(--primary-btn); margin-bottom: 10px; letter-spacing: 1px; white-space: nowrap; line-height: 1.1; }
+        .reveal-zh { font-size: 1.6rem; color: var(--text-gray); font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .wrong-answers-container { width: 100%; margin-top: 15px; border: 2px solid #FFEBEE; background: #FFEBEE; border-radius: 15px; padding: 10px; text-align: left; box-sizing: border-box; }
+        .wrong-list-item { background: #FFF; border-radius: 10px; padding: 10px 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; color: #D32F2F; font-weight: bold; }
+        .hidden { display: none !important; }
+        .en-hint-text { font-size: 1.8rem; color: #CCC; font-family: monospace; letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-align: center; display: block; }
+        .en-hint-text.reveal { color: var(--primary-btn); font-family: sans-serif; letter-spacing: 0; }
+    </style>
+</head>
+<body>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <div class="game-card">
+            <div class="header-section">
+                <h1 class="main-title">English Quiz</h1>
+                <div class="sub-title">G2 生字測驗</div>
+            </div>
+
+            <div class="content-area center-content">
+                <label class="section-label">1. 模式 Mode</label>
+                <div class="mode-container">
+                    <div class="mode-btn active" id="mode-block" onclick="selectMode('block')">
+                        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44A.996.996 0 0 1 12 2c.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 8.66v6.68L10.99 18.7V12.01L5 8.66zm14 6.68V8.66l-5.99 3.35V18.7l5.99-3.36z"/></svg>
+                        <span>積木拼字</span>
+                    </div>
+                    <div class="mode-btn" id="mode-type" onclick="selectMode('type')">
+                        <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+                        <span>打字練習</span>
+                    </div>
+                </div>
+
+                <label class="section-label">2. 範圍 Scope</label>
+                <div class="scope-tabs">
+                    <button class="tab-btn active" id="tab-custom" onclick="selectScope('custom')">≡ 自訂範圍</button>
+                    <button class="tab-btn" id="tab-random" onclick="selectScope('random')">⤭ 隨機題數</button>
+                </div>
+
+                <div id="scope-custom-area" class="range-area">
+                    <div class="range-inputs">
+                        <div class="input-wrapper">
+                            <span class="prefix-text">No.</span>
+                            <input type="number" id="input-start" class="num-input" value="1" min="1">
+                        </div>
+                        <span class="tilde-separator">~</span>
+                        <div class="input-wrapper">
+                            <span class="prefix-text">No.</span>
+                            <input type="number" id="input-end" class="num-input" value="20" min="1">
+                        </div>
+                    </div>
+                    <div style="font-size:0.8rem; color:#F57C00; margin-top:10px; font-weight:bold;">(總共150個生字)</div>
+                </div>
+
+                <div id="scope-random-area" class="range-area hidden" style="background: #E0F2F1; border-color: #B2DFDB;">
+                     <label style="color:#00897B; font-size: 0.9rem; display:block; margin-bottom:10px;">題目數量</label>
+                     <div style="display:flex; justify-content:center; gap:10px;">
+                        <button class="tab-btn" style="background:#FFF; flex:0 0 50px;" onclick="setRandomCount(10)">10</button>
+                        <button class="tab-btn active" style="background:#FFF; color:#00897B; border:2px solid #00897B; flex:0 0 50px;" onclick="setRandomCount(20)" id="btn-rand-20">20</button>
+                        <button class="tab-btn" style="background:#FFF; flex:0 0 50px;" onclick="setRandomCount(30)">30</button>
+                     </div>
+                </div>
+            </div>
+
+            <div class="game-btn-group">
+                <button class="btn-large btn-flex-center" onclick="startGame()">
+                    <span>🚀</span> <span>開始 (Start)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-card">
+            <div class="header-section">
+                <div class="progress-pill" id="question-count">1 / 20</div>
+            </div>
+
+            <div class="content-area center-content">
+                <div class="question-header">
+                    <h2 class="zh-display" id="zh-word">中文</h2>
+                    <button onclick="playAudio()" class="audio-btn" title="Play Pronunciation">
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                    </button>
+                </div>
+
+                <div style="width: 100%;">
+                    <!-- MODE: TYPING -->
+                    <div id="type-mode-area">
+                        <div id="en-hint" class="en-hint-text">_ _ _ _</div>
+                        <input type="text" id="manual-input" class="game-input" placeholder="Type here..." autocomplete="off" onkeypress="handleKeyPress(event)">
+                    </div>
+
+                    <!-- MODE: BLOCKS -->
+                    <div id="block-mode-area" class="block-game-container hidden">
+                        <div id="slots-container" class="answer-slots-area"></div>
+                        <div id="blocks-source" class="choice-blocks-area"></div>
+                    </div>
+
+                    <!-- REVEAL AREA -->
+                    <div id="answer-reveal-area" class="answer-reveal-area hidden">
+                        <div class="reveal-en" id="reveal-en-word">Word</div>
+                        <div class="reveal-zh" id="reveal-zh-word">中文意思</div>
+                    </div>
+
+                    <div class="feedback-area">
+                        <div id="feedback-msg" class="feedback-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-btn-group">
+                <button class="btn-submit btn-large btn-flex-center" id="submit-btn" onclick="submitAnswer()">
+                    <span>✨</span> <span>Submit</span>
+                </button>
+                <button class="btn-next btn-large btn-flex-center" id="next-btn" onclick="nextQuestion()">
+                    <span>➜</span> <span>Next</span>
+                </button>
+                <button class="btn-giveup btn-large btn-flex-center" id="giveup-btn" onclick="giveUp()">
+                    <span>🏳️</span> <span>Give Up</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+        <div class="game-card">
+            <div class="header-section" style="margin-top:20px;">
+                <h1 class="main-title">測驗完成</h1>
+                <h2 class="sub-title" id="result-subtitle">Great Job!</h2>
+            </div>
+            
+            <div class="content-area top-content">
+                <div style="font-size: 5rem; color:var(--primary-btn); font-weight:bold; margin: 10px 0;">
+                    <span id="final-score">0</span>
+                    <span style="font-size:2rem; color:#aaa;">/ <span id="final-total">0</span></span>
+                </div>
+
+                <div id="wrong-answers-area" class="hidden" style="width:100%;">
+                    <p style="color:#D32F2F; font-weight:bold; margin-bottom:5px;">需要複習的單字：</p>
+                    <div id="wrong-answers-list" class="wrong-answers-container"></div>
+                </div>
+            </div>
+            
+            <div class="game-btn-group">
+                <button class="btn-large btn-flex-center" onclick="goHome()">
+                    <span>🏠</span> <span>回到首頁</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === Data ===
+        const allWords = [
+            // 1-25
+            {en: "sing", zh: "唱歌"}, {en: "wash", zh: "洗"}, {en: "clean", zh: "清潔"}, {en: "chore", zh: "家務"}, {en: "give", zh: "給"},
+            {en: "feel", zh: "感覺"}, {en: "hurt", zh: "受傷"}, {en: "parents", zh: "父母"}, {en: "happy", zh: "快樂的"}, {en: "sad", zh: "傷心的"},
+            {en: "hungry", zh: "餓的"}, {en: "thirsty", zh: "渴的"}, {en: "angry", zh: "生氣的"}, {en: "bored", zh: "無聊的"}, {en: "dizzy", zh: "頭暈的"},
+            {en: "block", zh: "積木"}, {en: "black", zh: "黑色"}, {en: "flag", zh: "旗子"}, {en: "flap", zh: "拍動"}, {en: "globe", zh: "地球儀"},
+            {en: "glove", zh: "手套"}, {en: "plum", zh: "李子"}, {en: "plate", zh: "盤子"}, {en: "external", zh: "外部的"}, {en: "pattern", zh: "圖案/模式"},
+            // 26-50
+            {en: "children", zh: "孩子們"}, {en: "bottle", zh: "瓶子"}, {en: "nap", zh: "小睡"}, {en: "yellow", zh: "黃色"}, {en: "five", zh: "五"},
+            {en: "own", zh: "擁有"}, {en: "house", zh: "房子"}, {en: "apartment", zh: "公寓"}, {en: "scared", zh: "害怕的"}, {en: "sunshine", zh: "陽光"},
+            {en: "tissue", zh: "面紙"}, {en: "watch", zh: "手錶"}, {en: "glasses", zh: "眼鏡"}, {en: "mirror", zh: "鏡子"}, {en: "wallet", zh: "錢包"},
+            {en: "sled", zh: "雪橇"}, {en: "slide", zh: "滑梯"}, {en: "bride", zh: "新娘"}, {en: "brave", zh: "勇敢的"}, {en: "crab", zh: "螃蟹"},
+            {en: "crib", zh: "嬰兒床"}, {en: "frog", zh: "青蛙"}, {en: "freeze", zh: "結冰/冷凍"}, {en: "skin", zh: "皮膚"}, {en: "young", zh: "年輕的"},
+            // 51-75
+            {en: "townhouse", zh: "聯排別墅"}, {en: "steps", zh: "台階"}, {en: "light", zh: "光/燈"}, {en: "hold", zh: "抱/拿"}, {en: "funny", zh: "好笑的"},
+            {en: "year", zh: "年"}, {en: "grown-up", zh: "成人"}, {en: "cry", zh: "哭"}, {en: "smartphone", zh: "智慧型手機"}, {en: "toothbrush", zh: "牙刷"},
+            {en: "tablet", zh: "平板電腦"}, {en: "plastic", zh: "塑膠"}, {en: "rubber", zh: "橡膠"}, {en: "metal", zh: "金屬"}, {en: "glass", zh: "玻璃"},
+            {en: "drum", zh: "鼓"}, {en: "dragon", zh: "龍"}, {en: "grape", zh: "葡萄"}, {en: "grass", zh: "草"}, {en: "truck", zh: "卡車"},
+            {en: "trap", zh: "陷阱"}, {en: "smile", zh: "微笑"}, {en: "smoke", zh: "煙"}, {en: "diet", zh: "飲食"}, {en: "exercise", zh: "運動"},
+            // 76-100
+            {en: "left", zh: "左邊/剩下的"}, {en: "away", zh: "離開"}, {en: "people", zh: "人們"}, {en: "beautiful", zh: "美麗的"}, {en: "swan", zh: "天鵝"},
+            {en: "stay", zh: "停留"}, {en: "thing", zh: "東西"}, {en: "place", zh: "地方"}, {en: "pasta", zh: "義大利麵"}, {en: "steak", zh: "牛排"},
+            {en: "pancake", zh: "鬆餅"}, {en: "noodle", zh: "麵條"}, {en: "curry", zh: "咖哩"}, {en: "sushi", zh: "壽司"}, {en: "stew", zh: "燉菜"},
+            {en: "snore", zh: "打呼"}, {en: "spin", zh: "旋轉"}, {en: "space", zh: "太空/空間"}, {en: "mask", zh: "面具/口罩"}, {en: "jump", zh: "跳"},
+            {en: "fast", zh: "快的"}, {en: "nest", zh: "巢"}, {en: "skunk", zh: "臭鼬"}, {en: "meal", zh: "餐"}, {en: "germ", zh: "細菌"},
+            // 101-125
+            {en: "idea", zh: "主意"}, {en: "heat", zh: "熱"}, {en: "pool", zh: "水池"}, {en: "cool", zh: "涼爽的"}, {en: "special", zh: "特別的"},
+            {en: "laugh", zh: "笑"}, {en: "family", zh: "家庭"}, {en: "beach", zh: "海灘"}, {en: "seed", zh: "種子"}, {en: "plant", zh: "植物"},
+            {en: "grow", zh: "生長"}, {en: "doctor", zh: "醫生"}, {en: "firefighter", zh: "消防員"}, {en: "teacher", zh: "老師"}, {en: "driver", zh: "司機"},
+            {en: "pink", zh: "粉紅色"}, {en: "wink", zh: "眨眼"}, {en: "chin", zh: "下巴"}, {en: "chop", zh: "砍/劈"}, {en: "shell", zh: "貝殼"},
+            {en: "ship", zh: "船"}, {en: "thin", zh: "瘦的/薄的"}, {en: "thick", zh: "厚的"}, {en: "desert", zh: "沙漠"}, {en: "environment", zh: "環境"},
+            // 126-150
+            {en: "baseball", zh: "棒球"}, {en: "tree", zh: "樹"}, {en: "roost", zh: "棲息處"}, {en: "beehive", zh: "蜂巢"}, {en: "horse", zh: "馬"},
+            {en: "down", zh: "向下"}, {en: "kick", zh: "踢"}, {en: "soccer", zh: "足球"}, {en: "collector", zh: "收集者"}, {en: "fire station", zh: "消防局"},
+            {en: "farmer", zh: "農夫"}, {en: "librarian", zh: "圖書館員"}, {en: "hospital", zh: "醫院"}, {en: "school", zh: "學校"}, {en: "nurse", zh: "護士"},
+            {en: "whale", zh: "鯨魚"}, {en: "watch", zh: "看/手錶"}, {en: "lunch", zh: "午餐"}, {en: "munch", zh: "大聲咀嚼"}, {en: "fish", zh: "魚"},
+            {en: "dish", zh: "碟子/盤子"}, {en: "king", zh: "國王"}, {en: "long", zh: "長的"}, {en: "habitat", zh: "棲息地"}, {en: "shelter", zh: "避難所/庇護所"}
+        ];
+
+        // === State ===
+        let currentMode = 'block'; 
+        let scopeMode = 'custom'; 
+        let randomCount = 20;
+        let quizList = [];
+        let currentIdx = 0;
+        let score = 0;
+        let canAnswer = false;
+        let wrongAnswers = [];
+        let wrongAttempts = 0;
+
+        let blockSlots = []; 
+        let sourceBlocks = []; 
+
+        // === UI Functions ===
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-block').classList.toggle('active', mode === 'block');
+            document.getElementById('mode-type').classList.toggle('active', mode === 'type');
+        }
+
+        function selectScope(scope) {
+            scopeMode = scope;
+            document.getElementById('tab-custom').classList.toggle('active', scope === 'custom');
+            document.getElementById('tab-random').classList.toggle('active', scope === 'random');
+            if(scope === 'custom') {
+                document.getElementById('scope-custom-area').classList.remove('hidden');
+                document.getElementById('scope-random-area').classList.add('hidden');
+            } else {
+                document.getElementById('scope-custom-area').classList.add('hidden');
+                document.getElementById('scope-random-area').classList.remove('hidden');
+            }
+        }
+        
+        function setRandomCount(count) {
+            randomCount = count;
+            const btns = document.querySelectorAll('#scope-random-area button');
+            btns.forEach(b => {
+                b.classList.remove('active');
+                b.style.borderColor = "#FFF";
+                b.style.color = "#424242";
+            });
+            event.target.classList.add('active');
+            event.target.style.borderColor = "#00897B";
+            event.target.style.color = "#00897B";
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // === Audio Functions ===
+        function playWinSound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine'; 
+                osc.frequency.value = freq;
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                const now = ctx.currentTime;
+                const start = now + i * 0.1; 
+                
+                osc.start(start);
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(0.2, start + 0.05); 
+                gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5); 
+                osc.stop(start + 0.5);
+            });
+        }
+
+        // === Game Logic ===
+
+        function startGame() {
+            quizList = [];
+            wrongAnswers = []; 
+            const maxWords = allWords.length;
+
+            if (scopeMode === 'custom') {
+                const sVal = parseInt(document.getElementById('input-start').value);
+                const eVal = parseInt(document.getElementById('input-end').value);
+                
+                if (isNaN(sVal) || isNaN(eVal)) { alert("請輸入有效的數字！"); return; }
+                if (sVal < 1 || sVal > maxWords) { alert(`起始題號超出範圍！請輸入 1 ~ ${maxWords} 之間的數字。`); return; }
+                if (eVal < 1 || eVal > maxWords) { alert(`結束題號超出範圍！請輸入 1 ~ ${maxWords} 之間的數字。`); return; }
+                if (sVal > eVal) { alert("起始題號不能大於結束題號！"); return; }
+
+                for (let i = sVal - 1; i < eVal; i++) {
+                    quizList.push(allWords[i]);
+                }
+            } else {
+                quizList = shuffle([...allWords]).slice(0, randomCount);
+            }
+
+            if(quizList.length === 0) { alert("範圍無效，請重新選擇"); return; }
+
+            currentIdx = 0;
+            score = 0;
+            showScreen('game-screen');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            canAnswer = true;
+            wrongAttempts = 0;
+            const q = quizList[currentIdx];
+            document.getElementById('question-count').textContent = `${currentIdx + 1} / ${quizList.length}`;
+            document.getElementById('zh-word').textContent = q.zh;
+            document.getElementById('feedback-msg').textContent = "";
+            
+            document.getElementById('submit-btn').style.display = 'flex';
+            document.getElementById('giveup-btn').style.display = 'flex';
+            document.getElementById('next-btn').style.display = 'none';
+
+            document.getElementById('answer-reveal-area').classList.add('hidden');
+
+            if (currentMode === 'type') {
+                document.getElementById('type-mode-area').classList.remove('hidden');
+                document.getElementById('block-mode-area').classList.add('hidden');
+                
+                let hint = "";
+                for(let i=0; i<q.en.length; i++) {
+                    if(i===0) hint += q.en[i] + " ";
+                    else if (q.en[i] === ' ' || q.en[i] === '-') hint += q.en[i] + " ";
+                    else hint += "_ ";
+                }
+                const hintEl = document.getElementById('en-hint');
+                hintEl.textContent = hint;
+                hintEl.className = "en-hint-text"; 
+
+                const input = document.getElementById('manual-input');
+                input.value = "";
+                input.disabled = false;
+            } else {
+                document.getElementById('type-mode-area').classList.add('hidden');
+                document.getElementById('block-mode-area').classList.remove('hidden');
+                initBlockGame(q.en);
+            }
+        }
+
+        function initBlockGame(targetWord) {
+            const slotsContainer = document.getElementById('slots-container');
+            const blocksContainer = document.getElementById('blocks-source');
+            slotsContainer.innerHTML = '';
+            blocksContainer.innerHTML = '';
+            
+            // 修正：自動判斷單字長度，應用緊湊模式
+            if (targetWord.length > 8) {
+                slotsContainer.classList.add('compact');
+            } else {
+                slotsContainer.classList.remove('compact');
+            }
+
+            blockSlots = [];
+            sourceBlocks = [];
+            
+            for (let i = 0; i < targetWord.length; i++) {
+                const char = targetWord[i];
+                if (char === ' ') {
+                    const spacer = document.createElement('div');
+                    spacer.className = 'spacer-slot';
+                    slotsContainer.appendChild(spacer);
+                    blockSlots.push({ char: ' ', filled: true, sourceId: null }); 
+                } else {
+                    const slot = document.createElement('div');
+                    slot.className = 'letter-slot';
+                    slot.dataset.index = i;
+                    slot.onclick = () => onSlotClick(i);
+                    slotsContainer.appendChild(slot);
+                    blockSlots.push({ char: null, filled: false, sourceId: null });
+                }
+            }
+
+            let letters = targetWord.split('').filter(c => c !== ' ').map((char, index) => {
+                return { char: char, id: index };
+            });
+            letters = shuffle(letters);
+
+            letters.forEach(item => {
+                const btn = document.createElement('div');
+                btn.className = 'choice-block';
+                btn.textContent = item.char;
+                btn.id = 'block-' + item.id;
+                btn.onclick = () => onBlockClick(item.id, item.char);
+                blocksContainer.appendChild(btn);
+                sourceBlocks.push(item);
+            });
+        }
+
+        function onBlockClick(blockId, char) {
+            if (!canAnswer) return;
+            const emptyIndex = blockSlots.findIndex(s => !s.filled);
+            
+            if (emptyIndex !== -1) {
+                blockSlots[emptyIndex] = { char: char, filled: true, sourceId: blockId };
+                const slotEl = document.querySelector(`.letter-slot[data-index="${emptyIndex}"]`);
+                slotEl.textContent = char;
+                slotEl.classList.add('filled');
+
+                const blockEl = document.getElementById('block-' + blockId);
+                blockEl.classList.add('used');
+
+                if (blockSlots.every(s => s.filled)) {
+                   checkBlockAnswer();
+                }
+            }
+        }
+
+        function onSlotClick(index) {
+            if (!canAnswer) return;
+            const slotData = blockSlots[index];
+            if (slotData.filled && slotData.char !== ' ') {
+                const blockEl = document.getElementById('block-' + slotData.sourceId);
+                if(blockEl) blockEl.classList.remove('used');
+                blockSlots[index] = { char: null, filled: false, sourceId: null };
+                const slotEl = document.querySelector(`.letter-slot[data-index="${index}"]`);
+                slotEl.textContent = '';
+                slotEl.classList.remove('filled');
+                document.getElementById('feedback-msg').textContent = "";
+            }
+        }
+
+        function checkBlockAnswer() {
+            const currentAnswer = blockSlots.map(s => s.char).join('');
+            const target = quizList[currentIdx].en;
+            if (currentAnswer === target) {
+                document.getElementById('feedback-msg').textContent = "Correct! 🎉";
+                document.getElementById('feedback-msg').className = "feedback-text good";
+                score++;
+                endTurn(true);
+            } else {
+                wrongAttempts++;
+                if (wrongAttempts >= 3) {
+                    endTurn(false);
+                } else {
+                    document.getElementById('feedback-msg').textContent = "Try again!";
+                    document.getElementById('feedback-msg').className = "feedback-text bad";
+                }
+            }
+        }
+
+        function handleKeyPress(e) {
+            if(e.key === 'Enter') submitAnswer();
+        }
+
+        function playAudio() {
+            const word = quizList[currentIdx].en;
+            const u = new SpeechSynthesisUtterance(word);
+            u.lang = 'en-US';
+            u.rate = 0.8;
+            window.speechSynthesis.speak(u);
+        }
+
+        function submitAnswer() {
+            if(!canAnswer) return;
+            
+            if (currentMode === 'type') {
+                const input = document.getElementById('manual-input').value.trim().toLowerCase();
+                const target = quizList[currentIdx].en.toLowerCase();
+                const cleanInput = input.replace(/[^a-zA-Z0-9]/g, "");
+                const cleanTarget = target.replace(/[^a-zA-Z0-9]/g, "");
+
+                if(cleanInput === cleanTarget && cleanInput.length > 0) {
+                    document.getElementById('feedback-msg').textContent = "Correct! 🎉";
+                    document.getElementById('feedback-msg').className = "feedback-text good";
+                    score++;
+                    endTurn(true);
+                } else {
+                    wrongAttempts++;
+                    if (wrongAttempts >= 3) {
+                        endTurn(false);
+                    } else {
+                        document.getElementById('feedback-msg').textContent = "Try again! 💪";
+                        document.getElementById('feedback-msg').className = "feedback-text bad";
+                        const box = document.getElementById('manual-input');
+                        box.style.borderColor = "var(--wrong)";
+                        setTimeout(() => box.style.borderColor = "#EEE", 500);
+                    }
+                }
+            } else {
+                checkBlockAnswer();
+            }
+        }
+
+        function giveUp() {
+            if(!canAnswer) return;
+            document.getElementById('feedback-msg').textContent = "";
+            endTurn(false);
+        }
+
+        function endTurn(isCorrect) {
+            canAnswer = false;
+            if (!isCorrect) {
+                wrongAnswers.push(quizList[currentIdx]);
+            }
+
+            document.getElementById('type-mode-area').classList.add('hidden');
+            document.getElementById('block-mode-area').classList.add('hidden');
+
+            const revealArea = document.getElementById('answer-reveal-area');
+            revealArea.classList.remove('hidden');
+            
+            document.getElementById('reveal-en-word').textContent = quizList[currentIdx].en;
+            document.getElementById('reveal-zh-word').textContent = quizList[currentIdx].zh;
+
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('giveup-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'flex';
+
+            playAudio();
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < quizList.length) {
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            showScreen('result-screen');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-total').textContent = quizList.length;
+
+            const subtitleEl = document.getElementById('result-subtitle');
+            const percentage = (score / quizList.length);
+            
+            if (percentage === 1) {
+                subtitleEl.textContent = "你真是太棒了 !";
+                subtitleEl.style.color = "#FF8F00"; 
+            } else if (percentage < 0.5) {
+                subtitleEl.textContent = "請再加加油唷! ";
+                subtitleEl.style.color = "#5D4037"; 
+            } else {
+                subtitleEl.textContent = "請繼續保持練習唷! ";
+                subtitleEl.style.color = "#5D4037";
+            }
+
+            playWinSound();
+
+            const wrongArea = document.getElementById('wrong-answers-area');
+            const wrongList = document.getElementById('wrong-answers-list');
+            wrongList.innerHTML = ""; 
+
+            if (wrongAnswers.length > 0) {
+                wrongArea.classList.remove('hidden');
+                wrongAnswers.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'wrong-list-item';
+                    row.innerHTML = `<span>${item.en}</span><span>${item.zh}</span>`;
+                    wrongList.appendChild(row);
+                });
+            } else {
+                wrongArea.classList.add('hidden');
+            }
+        }
+
+        function goHome() {
+            showScreen('start-screen');
+        }
+    </script>
+</body>
+</html>
